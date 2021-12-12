@@ -55,9 +55,10 @@ exports.simpanCheckin = async function(req, res) {
 
     let metaData = {
         'Content-Type': req.file.mimetype,
+        //'Content-Type': 'application/octet-stream',
     };
     // name bucket: bucket-presensi, folder path: checkin/
-    await minioClient.putObject("bucket-presensi",dataCheckin.checkin_file_folder + dataCheckin.checkin_file_nama, req.file.path, metaData, function(error, etag) {
+    await minioClient.fPutObject("bucket-presensi",dataCheckin.checkin_file_folder + dataCheckin.checkin_file_nama, req.file.path, metaData, function(error, etag) {
         if(error) {
             return responseApiError(res, error)
         }
@@ -115,9 +116,10 @@ exports.simpanCheckout = async function(req, res) {
 
     let metaData = {
         'Content-Type': req.file.mimetype,
+        //'Content-Type': 'application/octet-stream',
     };
     // name bucket: bucket-presensi, folder path: checkin/
-    await minioClient.putObject("bucket-presensi",dataCheckout.checkout_file_folder + dataCheckout.checkout_file_nama, req.file.path, metaData, function(error, etag) {
+    await minioClient.fPutObject("bucket-presensi",dataCheckout.checkout_file_folder + dataCheckout.checkout_file_nama, req.file.path, metaData, function(error, etag) {
         if(error) {
             return responseApiError(res, error)
         }
