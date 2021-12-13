@@ -124,7 +124,7 @@ exports.getListOptionKaryawan =  async function(){
     }
 }
 
-exports.createKaryawan = function(data_karyawan){
+exports.createKaryawan = function(transaction, data_karyawan){
   return new Promise( async (resolve, reject)=>{
       try {       
           const generateIdKaryawan = await utils.guid();
@@ -145,7 +145,7 @@ exports.createKaryawan = function(data_karyawan){
             return reject(new DefinedErrorResponse('Karyawan dengan NIP ' + valuesKaryawan.nip + " sudah ada"));
           }
 
-          Karyawan.create(valuesKaryawan)
+          Karyawan.create(valuesKaryawan, {transaction})
           .then(function (karyawan) {
               if (karyawan) {
                   return resolve(karyawan);
@@ -163,7 +163,7 @@ exports.createKaryawan = function(data_karyawan){
   });
 }
 
-exports.updateKaryawan = function(id_karyawan, data_karyawan){
+exports.updateKaryawan = function(transaction, id_karyawan, data_karyawan){
     return new Promise( async (resolve, reject)=>{
         try {         
             var valuesKaryawan = {
@@ -183,6 +183,7 @@ exports.updateKaryawan = function(id_karyawan, data_karyawan){
             }
   
             await Karyawan.update(valuesKaryawan, {
+                transaction: transaction,
                 where: {
                     id_karyawan: id_karyawan
                 }
@@ -204,11 +205,12 @@ exports.updateKaryawan = function(id_karyawan, data_karyawan){
     });
   }
 
-  exports.deleteKaryawan = function(id_karyawan){
+  exports.deleteKaryawan = function(transaction, id_karyawan){
     return new Promise( async (resolve, reject)=>{
         try { 
   
             await Karyawan.destroy({
+                transaction: transaction,
                 where: {
                     id_karyawan: id_karyawan
                 }

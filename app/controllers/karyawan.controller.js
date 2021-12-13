@@ -1,7 +1,7 @@
+const {db} = require('../../config/database');
 const karyawan_model = require('../models/karyawan.model');
 const user_model = require('../models/user.model');
 const {responseApiSuccess, responseApiError} = require('../../utils/response-handler');
-const db = require('../../config/database');
 const {config_app} = require('../../config/application');
 const e = require('express');
 const {karyawanValidation} = require('../../utils/validation/karyawan.validation');
@@ -13,6 +13,7 @@ const { parseBool } = require('../../utils/customHelper');
 
 // buat baru data karyawan
 exports.buatKaryawanBaru = async function(req, res) {
+  const transaction = await db.transaction();
     try{
         req.body = JSON.parse(JSON.stringify(req.body));
         let dataKaryawan = {};
@@ -37,22 +38,25 @@ exports.buatKaryawanBaru = async function(req, res) {
           return responseApiError(res, new DefinedErrorResponse('Formulir tidak valid!', errors));
         }
 
-        const karyawan = await karyawan_model.createKaryawan(dataKaryawan);
+        const karyawan = await karyawan_model.createKaryawan(transaction, dataKaryawan);
 
         if(withUser){
-          await user_model.createUser(dataKaryawan['username'], dataKaryawan['password'], karyawan.id_karyawan,
+          await user_model.createUser(transaction, dataKaryawan['username'], dataKaryawan['password'], karyawan.id_karyawan,
                             dataKaryawan.role);
         }
 
+        transaction.commit();
         return responseApiSuccess(res, "Data Karyawan berhasil disimpan"); 
 
     }catch(e){
+      transaction.rollback();
         return responseApiError(res, e);
     }
 };
 
 // ubah data karyawan
 exports.ubahKaryawan = async function(req, res) {
+  const transaction = await db.transaction();
   try{
       req.body = JSON.parse(JSON.stringify(req.body));
       let dataKaryawan = {};
@@ -78,34 +82,39 @@ exports.ubahKaryawan = async function(req, res) {
         return responseApiError(res, new DefinedErrorResponse('Formulir tidak valid!', errors));
       }
 
-      await karyawan_model.updateKaryawan(idKaryawan, dataKaryawan);
+      await karyawan_model.updateKaryawan(transaction, idKaryawan, dataKaryawan);
       if(withUser){
         let cekUser = await user_model.getUserByIdKaryawan(idKaryawan);
         if(cekUser){
-          await user_model.updateUser(cekUser.id_user, dataKaryawan['username'], dataKaryawan['password'], idKaryawan,
+          await user_model.updateUser(transaction, cekUser.id_user, dataKaryawan['username'], dataKaryawan['password'], idKaryawan,
                           dataKaryawan.role);
         }else{
-          await user_model.createUser(dataKaryawan['username'], dataKaryawan['password'], idKaryawan,
+          await user_model.createUser(transaction, dataKaryawan['username'], dataKaryawan['password'], idKaryawan,
                           dataKaryawan.role);
         }
         
       }
+      await transaction.commit();
       return responseApiSuccess(res, "Data Karyawan berhasil diubah"); 
 
   }catch(e){
+      await transaction.rollback();
       return responseApiError(res, e);
   }
 };
 
 // hapus data karyawan
 exports.hapusKaryawan = async function(req, res) {
+  const transaction = await db.transaction();
   try{
       let idKaryawan = req.params.id_karyawan;
-      await user_model.deleteUserByIdKaryawan(idKaryawan);
-      await karyawan_model.deleteKaryawan(idKaryawan);
+      await user_model.deleteUserByIdKaryawan(transaction, idKaryawan);
+      await karyawan_model.deleteKaryawan(transaction, idKaryawan);
+      await transaction.commit();
       return responseApiSuccess(res, "Data Karyawan berhasil dihapus"); 
 
   }catch(e){
+    await transaction.rollback();
       return responseApiError(res, e);
   }
 };
