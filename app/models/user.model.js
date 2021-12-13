@@ -147,7 +147,7 @@ exports.getUserByIdKaryawan =  async function(id_karyawan){
     }
 }
 
-exports.createUser = function(username, password, id_karyawan, role){
+exports.createUser = function(transaction, username, password, id_karyawan, role){
     return new Promise( async (resolve, reject)=>{
         try {       
             // lakukan penambahan disini
@@ -168,7 +168,7 @@ exports.createUser = function(username, password, id_karyawan, role){
                 return reject(new DefinedErrorResponse("Username sudah digunakan"));
             }
             
-            User.create(values)
+            User.create(values, {transaction})
             .then(function (user) {
                 if (user) {
                     return resolve(user);
@@ -186,7 +186,7 @@ exports.createUser = function(username, password, id_karyawan, role){
     });
 }
 
-exports.updateUser = function(user_id, username, password, id_karyawan, role){
+exports.updateUser = function(transaction, user_id, username, password, id_karyawan, role){
     return new Promise( async (resolve, reject)=>{
         try {       
                         
@@ -206,6 +206,7 @@ exports.updateUser = function(user_id, username, password, id_karyawan, role){
             }
 
             User.update(values, {
+                transaction: transaction,
                 where: {
                     [Op.and]: [ 
                         { id_user: user_id},
@@ -230,11 +231,12 @@ exports.updateUser = function(user_id, username, password, id_karyawan, role){
     });
 }
 
-exports.deleteUserByIdKaryawan = function(id_karyawan){
+exports.deleteUserByIdKaryawan = function(transaction, id_karyawan){
     return new Promise( async (resolve, reject)=>{
         try { 
   
             await User.destroy({
+                transaction: transaction,
                 where: {
                     id_karyawan: id_karyawan
                 }
