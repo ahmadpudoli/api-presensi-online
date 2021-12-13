@@ -53,6 +53,23 @@ exports.getPresensiByTanggalPerKaryawan =  async function(tglPresensi, idKaryawa
     }
   }
 
+exports.checkMemilikiTransaksiPresesnsi =  async function(idKaryawan){  
+    try {
+        const presensi = await Presensi.findOne({
+            where: {
+                id_karyawan: idKaryawan
+            }
+        });
+        if(presensi != null){
+            return true
+        }else{
+            return false;
+        }
+    } catch (err) {
+        throw err;
+    }
+  }
+
 exports.getListPresensiKaryawanPerbulan =  async function(idKaryawan, tahun, bulan){  
     try {
         tahun = (  Number(tahun) === 'NaN' || tahun == null || tahun == '') ? 2020 : tahun;

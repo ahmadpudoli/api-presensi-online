@@ -1,6 +1,7 @@
 const {db} = require('../../config/database');
 const karyawan_model = require('../models/karyawan.model');
 const user_model = require('../models/user.model');
+const presensi_model = require('../models/presensi.model');
 const {responseApiSuccess, responseApiError} = require('../../utils/response-handler');
 const {config_app} = require('../../config/application');
 const e = require('express');
@@ -108,6 +109,11 @@ exports.hapusKaryawan = async function(req, res) {
   const transaction = await db.transaction();
   try{
       let idKaryawan = req.params.id_karyawan;
+      // cek, jika sudah memiliki transaksi presensi proses dibatalkan
+      const cekMemilikiPresensi = await presensi_model.checkMemilikiTransaksiPresesnsi(idKaryawan);
+      if(cekMemilikiPresensi){
+        return responseApiError(res, new DefinedErrorResponse('Data karyawan tidak dapat dihapus, karena sudah memiliki transaksi'));
+      }
       await user_model.deleteUserByIdKaryawan(transaction, idKaryawan);
       await karyawan_model.deleteKaryawan(transaction, idKaryawan);
       await transaction.commit();
