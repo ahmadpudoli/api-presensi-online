@@ -46,11 +46,11 @@ exports.buatKaryawanBaru = async function(req, res) {
                             dataKaryawan.role);
         }
 
-        transaction.commit();
+        await transaction.commit();
         return responseApiSuccess(res, "Data Karyawan berhasil disimpan"); 
 
     }catch(e){
-      transaction.rollback();
+        await transaction.rollback();
         return responseApiError(res, e);
     }
 };
