@@ -5,10 +5,11 @@ module.exports = (app)=>{
   const karyawan_controller = require('../app/controllers/karyawan.controller');
   const ErrorResponse = require('../utils/error.response');
   const auth_jwt = require('../app/middleware/auth.middleware')
+  const auth_admin_jwt = require('../app/middleware/auth.admin.middleware');
 
   // create
   router.post('/', 
-    auth_jwt(function(req, res, next) {
+    auth_admin_jwt(function(req, res, next) {
       try{
         karyawan_controller.buatKaryawanBaru(req, res);      
       }catch(e){
@@ -19,7 +20,7 @@ module.exports = (app)=>{
 
   // update
   router.put('/:id_karyawan', 
-    auth_jwt(function(req, res, next) {
+    auth_admin_jwt(function(req, res, next) {
       try{
         karyawan_controller.ubahKaryawan(req, res);      
       }catch(e){
@@ -30,7 +31,7 @@ module.exports = (app)=>{
 
   // delete
   router.delete('/:id_karyawan', 
-    auth_jwt(function(req, res, next) {
+    auth_admin_jwt(function(req, res, next) {
       try{
         karyawan_controller.hapusKaryawan(req, res);      
       }catch(e){
@@ -50,7 +51,7 @@ module.exports = (app)=>{
   );
 
   router.get('/', 
-    auth_jwt(function(req, res, next) {
+    auth_admin_jwt(function(req, res, next) {
       try{
         karyawan_controller.getDaftarKaryawan(req, res);      
       }catch(e){

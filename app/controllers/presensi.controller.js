@@ -1,7 +1,7 @@
 const presensi_model = require('../models/presensi.model');
 const user_model = require('../models/user.model');
 const {responseApiSuccess, responseApiError} = require('../../utils/response-handler');
-const db = require('../../config/database');
+const {db} = require('../../config/database');
 const {config_app} = require('../../config/application');
 const e = require('express');
 const {karyawanValidation} = require('../../utils/validation/karyawan.validation');
@@ -16,6 +16,7 @@ const {format} = require('date-fns')
 
 // fungsi melakukan checkin
 exports.simpanCheckin = async function(req, res) {
+  const transaction = await db.transaction();
   try{
     req.body = JSON.parse(JSON.stringify(req.body));
 
@@ -53,28 +54,33 @@ exports.simpanCheckin = async function(req, res) {
       throw new DefinedErrorResponse('Anda sudah melakukan checkin');
     }
 
+    
+    
     let metaData = {
         'Content-Type': req.file.mimetype,
         //'Content-Type': 'application/octet-stream',
     };
     // name bucket: bucket-presensi, folder path: checkin/
-    await minioClient.fPutObject("bucket-presensi",dataCheckin.checkin_file_folder + dataCheckin.checkin_file_nama, req.file.path, metaData, function(error, etag) {
+    minioClient.fPutObject("bucket-presensi",dataCheckin.checkin_file_folder + dataCheckin.checkin_file_nama, req.file.path, metaData, async function(error, etag) {
         if(error) {
-            return responseApiError(res, error)
+            return responseApiError(res, e);
         }
+        const checkin = await presensi_model.simpanCheckin(transaction, tgl_presensi, id_karyawan, id_user, dataCheckin);
+        await transaction.commit();
+        return responseApiSuccess(res, "Checkin berhasil disimpan", dataCheckin); 
     });   
 
-    const checkin = await presensi_model.simpanCheckin(tgl_presensi, id_karyawan, id_user, dataCheckin);
-
-    return responseApiSuccess(res, "Checkin berhasil disimpan", dataCheckin); 
+    
 
   } catch(e){
+    await transaction.rollback();
       return responseApiError(res, e);
   }
 };
 
 // fungsi melakukan checkin
 exports.simpanCheckout = async function(req, res) {
+  const transaction = await db.transaction();
   try{
     req.body = JSON.parse(JSON.stringify(req.body));
 
@@ -113,23 +119,26 @@ exports.simpanCheckout = async function(req, res) {
     } else if(presensiCheck != null && presensiCheck.checkout != null){
       throw new DefinedErrorResponse('Anda sudah melakukan checkout');
     }
-
+    
     let metaData = {
         'Content-Type': req.file.mimetype,
         //'Content-Type': 'application/octet-stream',
     };
     // name bucket: bucket-presensi, folder path: checkin/
-    await minioClient.fPutObject("bucket-presensi",dataCheckout.checkout_file_folder + dataCheckout.checkout_file_nama, req.file.path, metaData, function(error, etag) {
+    await minioClient.fPutObject("bucket-presensi",dataCheckout.checkout_file_folder + dataCheckout.checkout_file_nama, req.file.path, metaData, async function(error, etag) {
         if(error) {
+            await transaction.rollback();
             return responseApiError(res, error)
         }
+        const checkout = await presensi_model.simpanCheckout(transaction, tgl_presensi, id_karyawan, dataCheckout);
+        await transaction.commit();
+        return responseApiSuccess(res, "Checkout berhasil disimpan", dataCheckout); 
     });   
 
-    const checkout = await presensi_model.simpanCheckout(tgl_presensi, id_karyawan, dataCheckout);
-
-    return responseApiSuccess(res, "Checkout berhasil disimpan", dataCheckout); 
+    
 
   } catch(e){
+    await transaction.rollback();
       return responseApiError(res, e);
   }
 };
@@ -179,6 +188,58 @@ exports.getInfoPresensiHariIni = async function(req, res) {
   }catch(e){
     return responseApiError(res, e);
   }
+};
+
+// download file checkin yang sudah diupload diminio
+exports.downloadFileCheckIn = async function(req, res) {
+    try{
+      req.params = JSON.parse(JSON.stringify(req.params));
+
+      const presensi = await presensi_model.getPresensiById(req.params.id_presensi);
+
+      if(presensi != null){
+        minioClient.getObject("bucket-presensi", presensi.checkin_file_folder + presensi.checkin_file_nama, function(error, stream) {
+            if(error) {
+                if(error.code == 'NoSuchKey') 
+                    return responseApiError(res, new DefinedErrorResponse('File tidak ditemukan'));
+                else
+                    return responseApiError(res, error);
+            }
+            return stream.pipe(res);
+        });
+      }else{
+        return responseApiError(res, new DefinedErrorResponse("presensi tidak ditemukan"));
+      }
+    }catch(e){
+        return responseApiError(res, e);
+    }finally{
+    }
+};
+
+// download file checkout yang sudah diupload diminio
+exports.downloadFileCheckout = async function(req, res) {
+    try{
+      req.params = JSON.parse(JSON.stringify(req.params));
+
+      const presensi = await presensi_model.getPresensiById(req.params.id_presensi);
+
+      if(presensi != null){
+        minioClient.getObject("bucket-presensi", presensi.checkout_file_folder + presensi.checkout_file_nama, function(error, stream) {
+            if(error) {
+                if(error.code == 'NoSuchKey') 
+                    return responseApiError(res, new DefinedErrorResponse('File tidak ditemukan'));
+                else
+                    return responseApiError(res, error);
+            }
+            return stream.pipe(res);
+        });
+      }else{
+        return responseApiError(res, new DefinedErrorResponse("presensi tidak ditemukan"));
+      }
+    }catch(e){
+        return responseApiError(res, e);
+    }finally{
+    }
 };
 
 // get detail karyawan

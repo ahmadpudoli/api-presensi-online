@@ -5,7 +5,8 @@ module.exports = (app)=>{
   var router = express.Router();
   const presensi_controller = require('../app/controllers/presensi.controller');
   const ErrorResponse = require('../utils/error.response');
-  const auth_jwt = require('../app/middleware/auth.middleware')  
+  const auth_jwt = require('../app/middleware/auth.middleware');  
+  const auth_admin_jwt = require('../app/middleware/auth.admin.middleware');
   const Multer = require('multer');
   const passport = require('passport');
 
@@ -42,9 +43,31 @@ module.exports = (app)=>{
     })
   );
 
+  // route download file checkin
+  router.get('/checkin-file/:id_presensi', 
+    auth_admin_jwt(function(req, res, next) {
+      try{
+        presensi_controller.downloadFileCheckIn(req, res);      
+      }catch(e){
+        next(e);
+      }
+    })
+  );
+
+ // route download file checkout
+  router.get('/checkout-file/:id_presensi', 
+    auth_admin_jwt(function(req, res, next) {
+      try{
+        presensi_controller.downloadFileCheckout(req, res);      
+      }catch(e){
+        next(e);
+      }
+    })
+  );
+
   // route get list presensi karyawan perbulan
   router.get('/:id_karyawan/:tahun/:bulan', 
-    auth_jwt(function(req, res, next) {
+    auth_admin_jwt(function(req, res, next) {
       try{
         presensi_controller.getPresensiKaryawanPerbulan(req, res);      
       }catch(e){

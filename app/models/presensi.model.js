@@ -25,7 +25,7 @@ exports.getPresensiById =  async function(id_presensi){
             attributes:['id_karyawan', 'nama_karyawan', 'nip', 'jenis_kelamin', 'email']
           }
       });
-      return karyawan;
+      return presensi;
   } catch (err) {
       throw err;
   }
@@ -138,7 +138,7 @@ exports.getListPresensiKaryawanPerbulan =  async function(idKaryawan, tahun, bul
     }
 }
 
-exports.simpanCheckin = function(tgl_presensi, id_karyawan, id_user, dataPresensi){
+exports.simpanCheckin = function(transaction, tgl_presensi, id_karyawan, id_user, dataPresensi){
   return new Promise( async (resolve, reject)=>{
       try {       
           const generateIdCheckin = await utils.guid();
@@ -154,7 +154,7 @@ exports.simpanCheckin = function(tgl_presensi, id_karyawan, id_user, dataPresens
             created_by                : id_user
           }
           
-          Presensi.create(valuesCheckin)
+          Presensi.create(valuesCheckin, {transaction: transaction})
           .then(function (presensi) {
               if (presensi) {
                   return resolve(presensi);
@@ -172,7 +172,7 @@ exports.simpanCheckin = function(tgl_presensi, id_karyawan, id_user, dataPresens
   });
 }
 
-exports.simpanCheckout = function(tglPresensi, idKaryawan, dataPresensi){
+exports.simpanCheckout = function(transaction, tglPresensi, idKaryawan, dataPresensi){
     return new Promise( async (resolve, reject)=>{
         try {     
             
@@ -192,6 +192,7 @@ exports.simpanCheckout = function(tglPresensi, idKaryawan, dataPresensi){
             }
             
             Presensi.update(valuesCheckout, {
+                transaction: transaction,
                 where : { id_presensi : valuesCheckout.id_presensi }
             })
             .then(function (presensi) {

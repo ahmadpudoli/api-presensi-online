@@ -47,12 +47,12 @@ const Presensi = db.define('trs_presensi', {
                                 type: Sequelize.TEXT, 
                                 allowNull: true,
                                 get: function() {
-                                  let val = this.getDataValue("checkin_file_nama");
-                                  return ( val != null ) ? JSON.parse(this.getDataValue("checkin_file_nama")): null;
+                                  let val = this.getDataValue("checkin_file_meta");
+                                  return ( val != null ) ? JSON.parse(this.getDataValue("checkin_file_meta")): null;
                                 },
                                 set: function(value) {
-                                  let val = this.getDataValue("checkin_file_nama");
-                                  return ( val != null ) ? this.setDataValue("checkin_file_nama", JSON.stringify(value)) : null;
+                                  let val = this.getDataValue("checkin_file_meta");
+                                  return ( val != null ) ? this.setDataValue("checkin_file_meta", JSON.stringify(value)) : null;
                                 }
                               },
   checkout                    : {type: Sequelize.DATE, allowNull: true },

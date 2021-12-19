@@ -32,7 +32,7 @@ exports.login = async function(req, res) {
     let token = jwt.sign(payload, 
       config_app.secret_jwt,
         {
-          expiresIn: config_app.expires_jwt // expires in 5 minutes
+          expiresIn: config_app.expires_jwt // expires jwt
         }
       );
 
