@@ -9,6 +9,8 @@ const { Karyawan, User, Presensi } = require('.');
 // init DataTypes
 const { DataTypes } = Sequelize;
 
+const {getRedisAsync, setRedisAsync} = require('../../utils/redis-helper');
+
 // relasi tabel
 Karyawan.hasOne(User, {as: 'user', foreignKey: 'id_karyawan', targetKey: 'id_karyawan'});
 Karyawan.hasMany(Presensi, {as: 'presensi', foreignKey: 'id_karyawan', targetKey: 'id_karyawan'});
@@ -50,74 +52,86 @@ exports.getKaryawanByNip =  async function(nip){
 }
 
 exports.getListKaryawan =  async function(key, page){  
+    let data = null;
     try {
         page = ( Number(page) === 'NaN' || page == null || page == '') ? 1 : page;
         let limit = 5;   // number of records per page
         let offset = 0;    // page number
 		offset = limit * (page - 1);
 
-
-        let kondisi = null;
-        if(key != null && key !=''){
-            kondisi =  {
-                [Op.or]: [{
-                        nip: {
-                            [Op.like]: `%${key}%`
+        let key_redis = 'getListKaryawan:karyawan:user:' + key + page;
+        data = await getRedisAsync(key_redis);
+        if(data == null){
+        
+            let kondisi = null;
+            if(key != null && key !=''){
+                kondisi =  {
+                    [Op.or]: [{
+                            nip: {
+                                [Op.like]: `%${key}%`
+                            }
+                        },
+                        {
+                            nama_karyawan: {
+                                [Op.like]: `%${key}%`
+                            }
                         }
-                    },
-                    {
-                        nama_karyawan: {
-                            [Op.like]: `%${key}%`
-                        }
-                    }
-                ]
-            };
-        }
-
-        let data = await Karyawan.findAndCountAll({ where: kondisi }); 
-        let pages = Math.ceil(data.count / limit); 
-        let listKaryawan = await Karyawan.findAll({ 
-            where: kondisi ,
-            limit: limit,
-            offset: offset,
-            order: [
-                ['nama_karyawan', 'ASC'],
-            ],
-            include: { 
-                model: User, 
-                as : 'user', 
-                attributes:['username', 'role']
+                    ]
+                };
             }
-        });    
 
-        
-        
-        return {    
-            'data'  : listKaryawan, 
-            'total' : data.count, 
-            'last_page': pages, 
-            'current_page': page,
-            'per_page' : limit
-        };
+            let data = await Karyawan.findAndCountAll({ where: kondisi }); 
+            let pages = Math.ceil(data.count / limit); 
+            let listKaryawan = await Karyawan.findAll({ 
+                where: kondisi ,
+                limit: limit,
+                offset: offset,
+                order: [
+                    ['nama_karyawan', 'ASC'],
+                ],
+                include: { 
+                    model: User, 
+                    as : 'user', 
+                    attributes:['username', 'role']
+                }
+            });   
+
+            data = {    
+                    'data'  : listKaryawan, 
+                    'total' : data.count, 
+                    'last_page': pages, 
+                    'current_page': page,
+                    'per_page' : limit
+                }
+            await setRedisAsync(key_redis, data);
+        }
+        return data;        
     } catch (err) {
         throw err;
     }
 }
 
 exports.getListOptionKaryawan =  async function(){  
+    let data = null;
     try {
-        let listKaryawan = await Karyawan.findAll({ 
-            order: [
-                ['nama_karyawan', 'ASC'],
-            ],
-        });    
+        let key_redis = 'getListOptionKaryawan:karyawan:user:';
+        data = await getRedisAsync(key_redis);
+        if(data == null){
+            let listKaryawan = await Karyawan.findAll({ 
+                order: [
+                    ['nama_karyawan', 'ASC'],
+                ],
+            });    
 
-        let arr_option = [];
-        listKaryawan.forEach(element => {
-            arr_option.push({id: element.id_karyawan, text: "[NIP:"+element.nip + "] " + element.nama_karyawan });
-        });
+            let arr_option = [];
+            listKaryawan.forEach(element => {
+                arr_option.push({id: element.id_karyawan, text: "[NIP:"+element.nip + "] " + element.nama_karyawan });
+            });
+            data = arr_option;
+            await setRedisAsync(key_redis, data);
+        }
         
-        return arr_option;
+        return data;
 
     } catch (err) {
         throw err;

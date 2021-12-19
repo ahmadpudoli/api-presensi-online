@@ -1,5 +1,6 @@
 const {db} = require('../../config/database');
 const {Sequelize, where, Op} = require('sequelize');
+const {deleteContainRedis} = require('../../utils/redis-helper');
 
 // Define schema Tabel mst_karyawan
 const Karyawan = db.define('mst_karyawan', {
@@ -17,6 +18,24 @@ const Karyawan = db.define('mst_karyawan', {
    freezeTableName: true,
    timestamps: false
  });
+Karyawan.afterCreate(async (karyawan, options) => {
+  deleteContainRedis(':karyawan:');
+});
+Karyawan.afterUpdate(async (karyawan, options) => {
+  deleteContainRedis(':karyawan:');
+});
+Karyawan.afterDestroy(async (karyawan, options) => {
+  deleteContainRedis(':karyawan:');
+});
+Karyawan.afterBulkCreate(async (karyawan, options) => {
+  deleteContainRedis(':karyawan:');
+});
+Karyawan.afterBulkUpdate(async (karyawan, options) => {
+  deleteContainRedis(':karyawan:');
+});
+Karyawan.afterBulkDestroy(async (karyawan, options) => {
+  deleteContainRedis(':karyawan:');
+});
 
  
  // Define schema Tabel mst_user
@@ -33,6 +52,25 @@ const User = db.define('mst_user', {
    freezeTableName: true,
    timestamps: false
  });
+User.afterCreate(async (user, options) => {
+  deleteContainRedis(':user:');
+});
+User.afterUpdate(async (user, options) => {
+  deleteContainRedis(':user:');
+});
+User.afterDestroy(async (user, options) => {
+  deleteContainRedis(':user:');
+});
+User.afterBulkCreate(async (user, options) => {
+  deleteContainRedis(':user:');
+});
+User.afterBulkUpdate(async (user, options) => {
+  deleteContainRedis(':user:');
+});
+User.afterBulkDestroy(async (user, options) => {
+  deleteContainRedis(':user:');
+});
+
 
  // Define schema Tabel trs_presensi
 const Presensi = db.define('trs_presensi', {
@@ -46,14 +84,6 @@ const Presensi = db.define('trs_presensi', {
   checkin_file_meta           : {
                                 type: Sequelize.TEXT, 
                                 allowNull: true,
-                                get: function() {
-                                  let val = this.getDataValue("checkin_file_meta");
-                                  return ( val != null ) ? JSON.parse(this.getDataValue("checkin_file_meta")): null;
-                                },
-                                set: function(value) {
-                                  let val = this.getDataValue("checkin_file_meta");
-                                  return ( val != null ) ? this.setDataValue("checkin_file_meta", JSON.stringify(value)) : null;
-                                }
                               },
   checkout                    : {type: Sequelize.DATE, allowNull: true },
   checkout_file_folder        : {type: Sequelize.STRING(255), allowNull: true },
@@ -61,14 +91,6 @@ const Presensi = db.define('trs_presensi', {
   checkout_file_meta          : {
                                   type: Sequelize.TEXT, 
                                   allowNull: true,
-                                  get: function() {
-                                    let val = this.getDataValue("checkout_file_meta");
-                                    return ( val != null ) ? JSON.parse(this.getDataValue("checkout_file_meta")) : null ;
-                                  },
-                                  set: function(value) {
-                                    let val = this.getDataValue("checkout_file_meta");
-                                    return ( val != null ) ? this.setDataValue("checkout_file_meta", JSON.stringify(value)) : null;
-                                  }
                                 },
   status                      : {type: Sequelize.STRING(1), allowNull: true },
   // createdAt                   : {type: Sequelize.DATE, allowNull: true, field: 'created_at' },
@@ -78,6 +100,24 @@ const Presensi = db.define('trs_presensi', {
   // Freeze Table Name
   freezeTableName: true,
   timestamps: false
+});
+Presensi.afterCreate(async (presensi, options) => {
+  deleteContainRedis(':presensi:');
+});
+Presensi.afterUpdate(async (presensi, options) => {
+  deleteContainRedis(':presensi:');
+});
+Presensi.afterDestroy(async (presensi, options) => {
+  deleteContainRedis(':presensi:');
+});
+Presensi.afterBulkCreate(async (presensi, options) => {
+  deleteContainRedis(':presensi:');
+});
+Presensi.afterBulkUpdate(async (presensi, options) => {
+  deleteContainRedis(':presensi:');
+});
+Presensi.afterBulkDestroy(async (presensi, options) => {
+  deleteContainRedis(':presensi:');
 });
 
  

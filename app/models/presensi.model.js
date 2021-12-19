@@ -9,6 +9,7 @@ const { Presensi, Karyawan, User} = require('.');
 const { lastDay } = require('../../utils/customHelper');
 // init DataTypes
 const { DataTypes } = Sequelize;
+const {getRedisAsync, setRedisAsync} = require('../../utils/redis-helper');
 
 // relasi tabel
 Presensi.hasOne(Karyawan, {as: 'karyawan', foreignKey: 'id_karyawan', targetKey: 'id_karyawan'});
@@ -71,68 +72,77 @@ exports.checkMemilikiTransaksiPresesnsi =  async function(idKaryawan){
   }
 
 exports.getListPresensiKaryawanPerbulan =  async function(idKaryawan, tahun, bulan){  
+    let data = null;
     try {
         tahun = (  Number(tahun) === 'NaN' || tahun == null || tahun == '') ? 2020 : tahun;
         bulan = (  Number(bulan) === 'NaN' || bulan == null || bulan == '') ? 1 : bulan;
 
-        let kondisi =  {
-                [Op.and]: [{
-                        id_karyawan: idKaryawan
-                    },
-                    Sequelize.where(Sequelize.fn('year', Sequelize.col("tgl_presensi")), tahun),
-                    Sequelize.where(Sequelize.fn('month', Sequelize.col("tgl_presensi")), bulan)                
-                ]
-            };
-        
+        let key_redis = 'getListPresensiKaryawanPerbulan:presensi:'+ idKaryawan + tahun + bulan;
+        data = await getRedisAsync(key_redis);
+        if(data == null){
+            let kondisi =  {
+                    [Op.and]: [{
+                            id_karyawan: idKaryawan
+                        },
+                        Sequelize.where(Sequelize.fn('year', Sequelize.col("tgl_presensi")), tahun),
+                        Sequelize.where(Sequelize.fn('month', Sequelize.col("tgl_presensi")), bulan)                
+                    ]
+                };
+            
 
-        let listPresensiKaryawan = await Presensi.findAll({ 
-            where: kondisi ,
-            sort: { tgl_presensi: 1 }
-        });    
+            let listPresensiKaryawan = await Presensi.findAll({ 
+                where: kondisi ,
+                sort: { tgl_presensi: 1 }
+            });    
 
-        let karyawan = await Karyawan.findOne({where: {id_karyawan : idKaryawan} });   
-        
-        if(karyawan == null){
-            return {    
-                'data'  : [], 
-                'karyawan' : [], 
-            };
-        }
-        
-        let today = new Date();
-        let day = today.getDate();  
-        let month = today.getMonth() + 1;     // 10 (Month is 0-based, so 10 means 11th Month)
-        let year = today.getFullYear(); 
-
-        let tgl_terakhir = 1;
-        if(year == tahun && bulan == month){
-            tgl_terakhir = today.getDate();
-        }else{
-            tgl_terakhir = lastDay(tahun, bulan);
-        }
-
-        let new_list = [];
-        for(let i= 1 ; i <= tgl_terakhir; i++){
-            let get_item = listPresensiKaryawan.find(element =>  new Date(element.tgl_presensi).getDate() == i);
-            let test = new Date(tahun, bulan-1, i, 0, 0, 0, 0);
-            if(get_item != null){
-                new_list.push(get_item);
-            }else{
-                new_list.push(new Presensi({
-                    checkin:null,
-                    checkout: null,
-                    id_presensi: null,
-                    id_karyawan: idKaryawan,
-                    tgl_presensi: new Date(tahun, bulan-1, i, 0, 0, 0, 0),
-                    status : 'TH'
-                }));
+            let karyawan = await Karyawan.findOne({where: {id_karyawan : idKaryawan} });   
+            
+            if(karyawan == null){
+                return {    
+                    'data'  : [], 
+                    'karyawan' : [], 
+                };
             }
-        }
+            
+            let today = new Date();
+            let day = today.getDate();  
+            let month = today.getMonth() + 1;     // 10 (Month is 0-based, so 10 means 11th Month)
+            let year = today.getFullYear(); 
 
-        return {    
-            'data'  : new_list, 
-            'karyawan' : karyawan, 
-        };
+            let tgl_terakhir = 1;
+            if(year == tahun && bulan == month){
+                tgl_terakhir = today.getDate();
+            }else{
+                tgl_terakhir = lastDay(tahun, bulan);
+            }
+
+            let new_list = [];
+            for(let i= 1 ; i <= tgl_terakhir; i++){
+                let get_item = listPresensiKaryawan.find(element =>  new Date(element.tgl_presensi).getDate() == i);
+                let test = new Date(tahun, bulan-1, i, 0, 0, 0, 0);
+                if(get_item != null){
+                    new_list.push(get_item);
+                }else{
+                    new_list.push(new Presensi({
+                        checkin:null,
+                        checkout: null,
+                        id_presensi: null,
+                        id_karyawan: idKaryawan,
+                        tgl_presensi: new Date(tahun, bulan-1, i, 0, 0, 0, 0),
+                        status : 'TH'
+                    }));
+                }
+            }
+
+           data = {    
+                'data'  : new_list, 
+                'karyawan' : karyawan, 
+            };
+            await setRedisAsync(key_redis, data);
+        }
+        
+        return data;
+
     } catch (err) {
         throw err;
     }

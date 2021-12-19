@@ -45,7 +45,7 @@ exports.simpanCheckin = async function(req, res) {
       checkin_file_folder       : "checkin/",
       //checkin_file_nama         : req.file.originalname,
       checkin_file_nama         : tgl_presensi + id_karyawan + "." + getExtension(req.file.originalname),
-      checkin_file_meta         : { lat: lat, lang:lang  },
+      checkin_file_meta         : JSON.stringify({ lat: lat, lang:lang  }),
     }
 
     // validasi apakah sudah pernah melakukan checkin
@@ -109,7 +109,7 @@ exports.simpanCheckout = async function(req, res) {
       checkout_file_folder       : "checkout/",
       //checkout_file_nama         : req.file.originalname,
       checkout_file_nama         : tgl_presensi + id_karyawan + "." + getExtension(req.file.originalname),
-      checkout_file_meta         : { lat: lat, lang:lang  },
+      checkout_file_meta         : JSON.stringify({ lat: lat, lang:lang  }),
     }
 
     // validasi apakah sudah pernah melakukan checkcheckout

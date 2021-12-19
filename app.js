@@ -13,6 +13,7 @@ const logger = require('morgan');
 const { responseApiError } = require('./utils/response-handler');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const redisClient = require('./utils/redisClient');
 
 // allow all origin
 app.use(cors());
